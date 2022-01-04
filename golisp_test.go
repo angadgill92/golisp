@@ -64,3 +64,42 @@ func Test_tokenize(t *testing.T) {
 		})
 	}
 }
+
+func Test_atom(t *testing.T) {
+	type args struct {
+		token string
+	}
+	tests := []struct {
+		name string
+		args args
+		want Atom
+	}{
+		{
+			name: "Parse integer token as a number",
+			args: args{token: "1"},
+			want: Number(1),
+		},
+		{
+			name: "Parse open parens as a Symbol",
+			args: args{token: "("},
+			want: Symbol("("),
+		},
+		{
+			name: "Parse closing parens as symbol",
+			args: args{token: ")"},
+			want: Symbol(")"),
+		},
+		{
+			name: "Parse word token as a Symbol",
+			args: args{token: "abc"},
+			want: Symbol("abc"),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := atom(tt.args.token); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("atom() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
