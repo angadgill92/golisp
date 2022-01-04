@@ -1,7 +1,19 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
+
+// tokenize first surrounds all opening and closing parens with
+// a space, then returns a slice of strings splitting the input on
+// space
+func tokenize(s string) []string {
+	r := strings.NewReplacer("(", " ( ", ")", " ) ")
+	return strings.Fields(r.Replace(s))
+}
 
 func main() {
-	fmt.Println("(hello \"world\")")
+	input := tokenize(`(add 2 3 4)`)
+	fmt.Printf("%#v \n", input)
 }
