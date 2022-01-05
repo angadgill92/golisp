@@ -14,6 +14,7 @@ type Exp interface {
 
 // Atom is a symbol or number
 type Atom interface {
+	Exp
 	atom()
 }
 
@@ -29,9 +30,63 @@ type Number float64
 func (n Number) atom()       {}
 func (n Number) expression() {}
 
-type List []Atom
+type List []Exp
 
 func (l List) expression() {}
+
+var (
+	errUnexpectedEOF         = fmt.Errorf("unexpected EOF")
+	errUnexpectedCloseParens = fmt.Errorf("unexpected )")
+)
+
+const (
+	openParens  = "("
+	closeParens = ")"
+)
+
+func parse(program string) (exp Exp, err error) {
+	tokens, exp, err := readFromTokens(tokenize(program))
+
+	// there should be no tokens left if the program is
+	// syntactically correct
+	if len(tokens) != 0 {
+		return nil, fmt.Errorf("unexpected tokens:%v expected EOF", tokens)
+	}
+	return
+}
+
+// readFromTokens reads an expression from a sequence of
+// tokens
+func readFromTokens(tokens []string) ([]string, Exp, error) {
+	if len(tokens) == 0 {
+		return nil, nil, errUnexpectedEOF
+	}
+
+	token, tokens := tokens[0], tokens[1:]
+
+	switch token {
+	case openParens:
+		var (
+			list List
+			exp  Exp
+			err  error
+		)
+
+		for len(tokens) == 0 || tokens[0] != closeParens {
+			tokens, exp, err = readFromTokens(tokens)
+			if err != nil {
+				return nil, nil, err
+			}
+			list = append(list, exp)
+		}
+		tokens = tokens[1:]
+		return tokens, list, nil
+	case closeParens:
+		return nil, nil, errUnexpectedCloseParens
+	}
+
+	return tokens, atom(token), nil
+}
 
 // atom tries to parse a token as a Number (type alias for float64)
 // if unsuccessful, it parses it as a Symbol
@@ -52,10 +107,12 @@ func tokenize(s string) []string {
 }
 
 func main() {
-	k := []Atom{
-		atom(`2.000`),
-		atom("hello"),
-		atom("\"hello\""),
+	p := "(begin (define r 10) (* pi (* r r)))"
+	fmt.Printf("%#v", tokenize(p))
+	k, err := parse(p)
+	if err != nil {
+		fmt.Println(err.Error())
 	}
-	fmt.Printf("%#v type: %T\n", k, k)
+
+	fmt.Printf("%#v", k)
 }
